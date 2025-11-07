@@ -39,3 +39,11 @@
     height: 100%;
     object-fit: cover;
 }
+
+pre {
+    background-color: var(--lighter-gray-color);
+    line-height: 1.5;
+    overflow-x: overlay;
+    scrollbar-color: #8888884a transparent;
+    scrollbar-width: thin;
+}
