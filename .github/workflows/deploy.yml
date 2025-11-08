@@ -21,7 +21,7 @@ jobs:
           node-version: '22'
           cache: 'yarn'
       - name: Install dependencies (Yarn)
-        run: yarn install --frozen-lockfile
+        run: yarn install
       - name: Build theme (optional)
         run: |
           # If your theme has a build step, keep this. If not, it will no-op.
