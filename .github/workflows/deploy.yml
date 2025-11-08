@@ -113,7 +113,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Accept-Version: v3.0" \
             -d '{"posts":[{"title":"Hello world"}]}' \
-            "/ghost/api/admin/posts/"
+            "${GHOST_ADMIN_URL}/ghost/api/admin/posts/"
           
           RESPONSE=$(curl -X POST -F 'file=@${ZIP_FILE}' -H "Authorization: Ghost $TOKEN" -H "Accept-Version: $version" "${UPLOAD_URL})
           echo "Upload response: ${RESPONSE}"
