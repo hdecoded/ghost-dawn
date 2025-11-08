@@ -127,7 +127,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.value }}
-          name: Theme v${{ steps.version.outputs.value }}
+          name: Ghost-Dawn v${{ steps.version.outputs.value }}
           body: |
             Automated release for theme v${{ steps.version.outputs.value }}.
             Includes the packaged Ghost theme zip produced by this workflow.
