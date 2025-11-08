@@ -112,28 +112,6 @@ jobs:
 
           echo "uploaded_theme=${THEME_SLUG}" >> $GITHUB_OUTPUT
           echo "Uploaded theme slug: ${THEME_SLUG}"
-      # - name: Activate theme
-      #   env:
-      #     THEME_TO_ACTIVATE: ${{ steps.upload.outputs.uploaded_theme }}
-      #   run: |
-      #     set -euo pipefail
-
-      #     ACTIVATE_URL="${GHOST_ADMIN_URL%/}/ghost/api/admin/themes/${THEME_TO_ACTIVATE}/activate/"
-      #     AUTH="Ghost ${GHOST_ADMIN_API_KEY}"
-
-      #     echo "Activating theme: ${THEME_TO_ACTIVATE}"
-
-      #     RESPONSE=$(curl -sS -X PUT "${ACTIVATE_URL}" \
-      #       -H "Authorization: ${AUTH}" \
-      #       -H "Accept: application/json")
-
-      #     echo "Activate response: ${RESPONSE}"
-
-      #     ACTIVE=$(echo "${RESPONSE}" | jq -r '.themes[0].active // empty')
-      #     if [ "${ACTIVE}" != "true" ]; then
-      #       echo "Theme failed to activate"
-      #       exit 1
-      #     fi
       - name: Upload artifact (zip)
         uses: actions/upload-artifact@v4
         with:
