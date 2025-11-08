@@ -1,9 +1,13 @@
 name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+run-name: ${{ github.actor }} deploying theme to ghost website
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  Build-Theme-and-Deploy:
     runs-on: ubuntu-latest
+    env:
+      # Set these in GitHub → Settings → Secrets and variables → Actions
+      GHOST_ADMIN_URL: ${{ secrets.GHOST_ADMIN_URL }}
+      GHOST_ADMIN_API_KEY: ${{ secrets.GHOST_ADMIN_API_KEY }} 
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
@@ -11,8 +15,37 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v5
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+      - name: Install dependencies (Yarn)
+        run: yarn install --frozen-lockfile
+      - name: Build theme (optional)
         run: |
-          ls ${{ github.workspace }}
+          # If your theme has a build step, keep this. If not, it will no-op.
+          if yarn run | grep -q "^  build"; then
+            yarn build
+          else
+            echo "No build script found; skipping build."
+          fi
+      - name: Package theme with yarn zip
+        id: zip
+        run: |
+          set -euo pipefail
+          # This should create a zip, commonly named like <name>-<version>.zip in the repo root
+          yarn zip
+
+          # Find the most recent zip produced
+          ZIP_FILE=$(ls -1t *.zip | head -n1)
+          if [ -z "${ZIP_FILE}" ]; then
+            echo "No zip found after 'yarn zip'"
+            exit 1
+          fi
+          echo "zip=${ZIP_FILE}" >> $GITHUB_OUTPUT
+          echo "Created zip: ${ZIP_FILE}"     
+
+
+
       - run: echo "🍏 This job's status is ${{ job.status }}."
