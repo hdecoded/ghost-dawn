@@ -38,7 +38,7 @@ jobs:
           yarn zip
 
           # Find the most recent zip produced
-          ZIP_FILE=$(ls -1t *.zip | head -n1)
+          ZIP_FILE=$(ls -1t dist/*.zip | head -n1)
           if [ -z "${ZIP_FILE}" ]; then
             echo "No zip found after 'yarn zip'"
             exit 1
