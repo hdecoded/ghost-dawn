@@ -11,8 +11,16 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
-      - name: list files 
-        run : ls -la
+      - name: Read theme version
+        id: version
+        run: |
+          set -euo pipefail
+          VERSION=$(jq -r '.version' package.json)
+          if [ -z "${VERSION}" ] || [ "${VERSION}" = "null" ]; then
+            echo "Unable to determine version from package.json"
+            exit 1
+          fi
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -21,14 +29,6 @@ jobs:
           cache-dependency-path: yarn.lock
       - name: Install dependencies (Yarn)
         run: yarn
-      - name: Build theme (optional)
-        run: |
-          # If your theme has a build step, keep this. If not, it will no-op.
-          if yarn run | grep -q "^  build"; then
-            yarn build
-          else
-            echo "No build script found; skipping build."
-          fi
       - name: Package theme with yarn zip
         id: zip
         run: |
@@ -43,8 +43,12 @@ jobs:
             echo "No zip found after 'yarn zip'"
             exit 1
           fi
-          echo "zip=${ZIP_FILE}" >> $GITHUB_OUTPUT
-          echo "Created zip: ${ZIP_FILE}"     
+          VERSIONED_ZIP="dist/dawn-${THEME_VERSION}.zip"
+          mv "${ZIP_FILE}" "${VERSIONED_ZIP}"
+          echo "zip=${VERSIONED_ZIP}" >> $GITHUB_OUTPUT
+          echo "Created zip: ${VERSIONED_ZIP}"
+        env:
+          THEME_VERSION: ${{ steps.version.outputs.value }}
       - name: Upload theme to Ghost Admin API
         id: upload
         env:
@@ -118,3 +122,13 @@ jobs:
           name: theme-zip
           path: ${{ steps.zip.outputs.zip }}
           retention-days: 7
+      - name: Create GitHub release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.value }}
+          name: Theme v${{ steps.version.outputs.value }}
+          body: |
+            Automated release for theme v${{ steps.version.outputs.value }}.
+            Includes the packaged Ghost theme zip produced by this workflow.
+          files: ${{ steps.zip.outputs.zip }}
