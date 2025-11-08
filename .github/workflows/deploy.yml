@@ -9,12 +9,8 @@ jobs:
       GHOST_ADMIN_URL: ${{ secrets.GHOST_ADMIN_URL }}
       GHOST_ADMIN_API_KEY: ${{ secrets.GHOST_ADMIN_API_KEY }} 
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       - name: Check out repository code
         uses: actions/checkout@v5
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -61,23 +57,17 @@ jobs:
 
           # Admin API key goes here
           KEY="${GHOST_ADMIN_API_KEY}"
-          echo "[DEBUG] Starting JWT generation for Ghost Admin upload" >&2 # DEBUG
-          echo "[DEBUG] GHOST_ADMIN_URL=${GHOST_ADMIN_URL}" >&2 # DEBUG
 
           # Split the key into ID and SECRET
           TMPIFS=$IFS
           IFS=':' read ID SECRET <<< "$KEY"
           IFS=$TMPIFS
-          echo "[DEBUG] Parsed key ID length: ${#ID}" >&2 # DEBUG
-          echo "[DEBUG] Parsed secret length: ${#SECRET}" >&2 # DEBUG
 
           # Prepare header and payload
           NOW=$(date +'%s')
           FIVE_MINS=$(($NOW + 300))
           HEADER="{\"alg\": \"HS256\",\"typ\": \"JWT\", \"kid\": \"$ID\"}"
           PAYLOAD="{\"iat\":$NOW,\"exp\":$FIVE_MINS,\"aud\": \"/admin/\"}"
-          echo "[DEBUG] JWT header: ${HEADER}" >&2 # DEBUG
-          echo "[DEBUG] JWT payload: ${PAYLOAD}" >&2 # DEBUG
 
           # Helper function for performing base64 URL encoding (binary safe)
           base64_url_encode() {
@@ -87,23 +77,17 @@ jobs:
           # Prepare the token body
           header_base64=$(printf '%s' "$HEADER" | base64_url_encode)
           payload_base64=$(printf '%s' "$PAYLOAD" | base64_url_encode)
-          echo "[DEBUG] header_base64=${header_base64}" >&2 # DEBUG
-          echo "[DEBUG] payload_base64=${payload_base64}" >&2 # DEBUG
 
           header_payload="${header_base64}.${payload_base64}"
 
           # Create the signature
           signature=$(printf '%s' "${header_payload}" | openssl dgst -binary -sha256 -mac HMAC -macopt hexkey:$SECRET | base64_url_encode)
-          echo "[DEBUG] signature length: ${#signature}" >&2 # DEBUG
 
           # Concat payload and signature into a valid JWT token
 
           TOKEN="${header_payload}.${signature}"
-          echo "[DEBUG] JWT preview: ${TOKEN:0:25}..." >&2 # DEBUG
           
           UPLOAD_URL="${GHOST_ADMIN_URL%/}/ghost/api/admin/themes/upload/"
-          echo "[DEBUG] Upload URL resolved to: ${UPLOAD_URL}" >&2 # DEBUG
-          AUTH="Ghost ${GHOST_ADMIN_API_KEY}"
 
           echo "Uploading theme: ${ZIP_FILE} → ${UPLOAD_URL}"
 
