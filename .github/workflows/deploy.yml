@@ -45,7 +45,42 @@ jobs:
           fi
           echo "zip=${ZIP_FILE}" >> $GITHUB_OUTPUT
           echo "Created zip: ${ZIP_FILE}"     
+      - name: Upload theme to Ghost Admin API
+        id: upload
+        env:
+          ZIP_FILE: ${{ steps.zip.outputs.zip }}
+        run: |
+          set -euo pipefail
 
+          if [ -z "${GHOST_ADMIN_URL}" ] || [ -z "${GHOST_ADMIN_API_KEY}" ]; then
+            echo "GHOST_ADMIN_URL or GHOST_ADMIN_API_KEY is missing"
+            exit 1
+          fi
 
+          UPLOAD_URL="${GHOST_ADMIN_URL%/}/ghost/api/admin/themes/upload/"
+          AUTH="Ghost ${GHOST_ADMIN_API_KEY}"
 
+          echo "Uploading theme: ${ZIP_FILE} → ${UPLOAD_URL}"
+
+          RESPONSE=$(curl -sS -X POST "${UPLOAD_URL}" \
+            -H "Authorization: ${AUTH}" \
+            -H "Accept: application/json" \
+            -F "file=@${ZIP_FILE};type=application/zip")
+
+          echo "Upload response: ${RESPONSE}"
+
+          THEME_SLUG=$(echo "${RESPONSE}" | jq -r '.themes[0].name // empty')
+          if [ -z "${THEME_SLUG}" ]; then
+            echo "Failed to parse upload response. Aborting."
+            exit 1
+          fi
+
+          echo "uploaded_theme=${THEME_SLUG}" >> $GITHUB_OUTPUT
+          echo "Uploaded theme slug: ${THEME_SLUG}"
+      - name: Upload artifact (zip)
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-zip
+          path: ${{ steps.zip.outputs.zip }}
+          retention-days: 7
       - run: echo "🍏 This job's status is ${{ job.status }}."
