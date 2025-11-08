@@ -79,16 +79,14 @@ jobs:
           echo "[DEBUG] JWT header: ${HEADER}" >&2 # DEBUG
           echo "[DEBUG] JWT payload: ${PAYLOAD}" >&2 # DEBUG
 
-          # Helper function for performing base64 URL encoding
+          # Helper function for performing base64 URL encoding (binary safe)
           base64_url_encode() {
-              declare input=${1:-$(</dev/stdin)}
-              # Use `tr` to URL encode the output from base64.
-              printf '%s' "${input}" | base64 | tr -d '=' | tr '+' '-' | tr '/' '_'
+              openssl base64 -A | tr -d '=' | tr '+/' '-_'
             }
 
           # Prepare the token body
-          header_base64=$(base64_url_encode "$HEADER")
-          payload_base64=$(base64_url_encode "$PAYLOAD")
+          header_base64=$(printf '%s' "$HEADER" | base64_url_encode)
+          payload_base64=$(printf '%s' "$PAYLOAD" | base64_url_encode)
           echo "[DEBUG] header_base64=${header_base64}" >&2 # DEBUG
           echo "[DEBUG] payload_base64=${payload_base64}" >&2 # DEBUG
 
