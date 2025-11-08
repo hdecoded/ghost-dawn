@@ -103,7 +103,7 @@ jobs:
           TOKEN="${header_payload}.${signature}"
           echo "[DEBUG] JWT preview: ${TOKEN:0:25}..." >&2 # DEBUG
           
-          UPLOAD_URL="${GHOST_ADMIN_URL%}/ghost/api/admin/themes/upload/"
+          UPLOAD_URL="${GHOST_ADMIN_URL}/ghost/api/admin/themes/upload/"
           echo "[DEBUG] Upload URL resolved to: ${UPLOAD_URL}" >&2 # DEBUG
           AUTH="Ghost ${GHOST_ADMIN_API_KEY}"
 
