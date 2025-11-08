@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          # cache: 'yarn'
+          cache: 'yarn'
       - name: Install dependencies (Yarn)
         run: yarn
       - name: Build theme (optional)
@@ -30,11 +30,12 @@ jobs:
         id: zip
         run: |
           set -euo pipefail
+          mkdir -p dist
           # This should create a zip, commonly named like <name>-<version>.zip in the repo root
           yarn zip
 
           # Find the most recent zip produced
-          ZIP_FILE=$(ls -1t dist/*.zip | head -n1)
+          ZIP_FILE=$(find dist -maxdepth 1 -type f -name '*.zip' -print0 | xargs -0 -r ls -1t | head -n1)
           if [ -z "${ZIP_FILE}" ]; then
             echo "No zip found after 'yarn zip'"
             exit 1
@@ -97,7 +98,7 @@ jobs:
           #   -d '{"posts":[{"title":"Hello world"}]}' \
           #   "${GHOST_ADMIN_URL}/ghost/api/admin/posts/"
           
-          RESPONSE=$(curl -X POST -F "file=@${ZIP_FILE}" -H "Authorization: Ghost $TOKEN" -H "Accept-Version: v3.0" "${UPLOAD_URL}")
+          RESPONSE=$(curl --fail --show-error -X POST -F "file=@${ZIP_FILE}" -H "Authorization: Ghost $TOKEN" -H "Accept-Version: v3.0" "${UPLOAD_URL}")
           echo "Upload response: ${RESPONSE}"
 
           THEME_SLUG=$(echo "${RESPONSE}" | jq -r '.themes[0].name // empty')
@@ -136,4 +137,3 @@ jobs:
           name: theme-zip
           path: ${{ steps.zip.outputs.zip }}
           retention-days: 7
-      - run: echo "🍏 This job's status is ${{ job.status }}."
