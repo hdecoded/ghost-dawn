@@ -60,18 +60,24 @@ jobs:
           #!/usr/bin/env bash
 
           # Admin API key goes here
-          KEY="GHOST_ADMIN_API_KEY"
+          KEY="${GHOST_ADMIN_API_KEY}"
+          echo "[DEBUG] Starting JWT generation for Ghost Admin upload" >&2 # DEBUG
+          echo "[DEBUG] GHOST_ADMIN_URL=${GHOST_ADMIN_URL}" >&2 # DEBUG
 
           # Split the key into ID and SECRET
           TMPIFS=$IFS
           IFS=':' read ID SECRET <<< "$KEY"
           IFS=$TMPIFS
+          echo "[DEBUG] Parsed key ID length: ${#ID}" >&2 # DEBUG
+          echo "[DEBUG] Parsed secret length: ${#SECRET}" >&2 # DEBUG
 
           # Prepare header and payload
           NOW=$(date +'%s')
           FIVE_MINS=$(($NOW + 300))
           HEADER="{\"alg\": \"HS256\",\"typ\": \"JWT\", \"kid\": \"$ID\"}"
           PAYLOAD="{\"iat\":$NOW,\"exp\":$FIVE_MINS,\"aud\": \"/admin/\"}"
+          echo "[DEBUG] JWT header: ${HEADER}" >&2 # DEBUG
+          echo "[DEBUG] JWT payload: ${PAYLOAD}" >&2 # DEBUG
 
           # Helper function for performing base64 URL encoding
           base64_url_encode() {
@@ -83,23 +89,33 @@ jobs:
           # Prepare the token body
           header_base64=$(base64_url_encode "$HEADER")
           payload_base64=$(base64_url_encode "$PAYLOAD")
+          echo "[DEBUG] header_base64=${header_base64}" >&2 # DEBUG
+          echo "[DEBUG] payload_base64=${payload_base64}" >&2 # DEBUG
 
           header_payload="${header_base64}.${payload_base64}"
 
           # Create the signature
           signature=$(printf '%s' "${header_payload}" | openssl dgst -binary -sha256 -mac HMAC -macopt hexkey:$SECRET | base64_url_encode)
+          echo "[DEBUG] signature length: ${#signature}" >&2 # DEBUG
 
           # Concat payload and signature into a valid JWT token
 
           TOKEN="${header_payload}.${signature}"
+          echo "[DEBUG] JWT preview: ${TOKEN:0:25}..." >&2 # DEBUG
           
-          UPLOAD_URL="${GHOST_ADMIN_URL%/}/ghost/api/admin/themes/upload/"
+          UPLOAD_URL="${GHOST_ADMIN_URL%}/ghost/api/admin/themes/upload/"
+          echo "[DEBUG] Upload URL resolved to: ${UPLOAD_URL}" >&2 # DEBUG
           AUTH="Ghost ${GHOST_ADMIN_API_KEY}"
 
           echo "Uploading theme: ${ZIP_FILE} → ${UPLOAD_URL}"
 
+          curl -H "Authorization: Ghost $TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "Accept-Version: v3.0" \
+            -d '{"posts":[{"title":"Hello world"}]}' \
+            "/ghost/api/admin/posts/"
+          
           RESPONSE=$(curl -X POST -F 'file=@${ZIP_FILE}' -H "Authorization: Ghost $TOKEN" -H "Accept-Version: $version" "${UPLOAD_URL})
-
           echo "Upload response: ${RESPONSE}"
 
           THEME_SLUG=$(echo "${RESPONSE}" | jq -r '.themes[0].name // empty')
