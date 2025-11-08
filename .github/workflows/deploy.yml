@@ -16,6 +16,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'yarn'
+          cache-dependency-path: yarn.lock
       - name: Install dependencies (Yarn)
         run: yarn
       - name: Build theme (optional)
