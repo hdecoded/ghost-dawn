@@ -1,6 +1,9 @@
 name: Deploy Theme
 run-name: ${{ github.actor }} deploying theme to ghost website
-on: [push]
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 jobs:
   Build-Theme-and-Deploy:
     runs-on: ubuntu-latest
